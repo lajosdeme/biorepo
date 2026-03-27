@@ -14,9 +14,9 @@ type FilecoinStore struct {
 	c *lighthouse.Client
 }
 
-func NewFilecoinStore() *FilecoinStore {
+func NewFilecoinStore(key string) *FilecoinStore {
 	client := lighthouse.NewClient(nil,
-		lighthouse.WithAPIKey(os.Getenv("LIGHTHOUSE_API_KEY")),
+		lighthouse.WithAPIKey(key),
 	)
 	return &FilecoinStore{c: client}
 }
