@@ -25,7 +25,7 @@ Every design in the protocol lives in two places simultaneously:
                                           CommitId → CID string
 ```
 
-**Store** — a content-addressed blob store. Holds raw FASTA-encoded sequence bytes. The Filecoin implementation uses the [web3.storage](https://web3.storage) HTTP API; the memory implementation holds bytes in a `sync.RWMutex`-protected map.
+**Store** — a content-addressed blob store. Holds raw FASTA-encoded sequence bytes. The Filecoin implementation uses the [lighthouse.storage](https://lighthouse.storage) HTTP API; the memory implementation holds bytes in a `sync.RWMutex`-protected map.
 
 **Index** — the onchain record. Each design produces one `BioCommit` on the `BioRepository` contract, identified by a `CommitId` (`bytes32`). The contract stores the Filecoin CID in a `cidByCommit` mapping so that any `CommitId` can be resolved back to its sequence without any offchain registry. The onchain implementation wraps the `abigen`-generated bindings; the memory implementation mirrors the contract's semantics exactly, including parent existence checks and the `CommitExists` guard.
 
@@ -54,7 +54,7 @@ import (
     onchainindex "github.com/lajosdeme/biorepo/index/onchain"
 )
 
-// Store — Filecoin via web3.storage
+// Store — Filecoin via lighthouse.storage
 s := filecoinstore.New(os.Getenv("WEB3_STORAGE_TOKEN"))
 
 // Index — deployed BioRepository contract
@@ -261,7 +261,7 @@ biorepo/
 │   └── tags.go          # TagFromString(), Season 1 tag constants
 ├── store/
 │   ├── store.go         # Store interface, CID type, memory implementation
-│   └── filecoin.go      # Filecoin/web3.storage implementation
+│   └── filecoin.go      # Filecoin/lighthouse.storage implementation
 └── index/
     ├── index.go         # Index interface, CommitRequest, memory implementation
     ├── onchain.go       # Ethereum implementation using abigen bindings
