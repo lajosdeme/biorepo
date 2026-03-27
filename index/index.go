@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -141,19 +142,21 @@ var (
 // exact derivation does not need to match the real contract — the memory
 // implementation is never used alongside a live chain.
 type Memory struct {
-	mu       sync.RWMutex
-	commits  map[CommitId]BioCommit  // primary store
-	children map[CommitId][]CommitId // parent → children index
-	byAuthor map[common.Address][]CommitId
-	events   []CommitEvent // ordered log, used by SearchByTag
+	mu          sync.RWMutex
+	commits     map[CommitId]BioCommit  // primary store
+	children    map[CommitId][]CommitId // parent → children index
+	byAuthor    map[common.Address][]CommitId
+	cidByCommit map[CommitId]store.CID
+	events      []CommitEvent // ordered log, used by SearchByTag
 }
 
 // NewMemory returns an initialised, empty in-memory index.
 func NewMemory() *Memory {
 	return &Memory{
-		commits:  make(map[CommitId]BioCommit),
-		children: make(map[CommitId][]CommitId),
-		byAuthor: make(map[common.Address][]CommitId),
+		commits:     make(map[CommitId]BioCommit),
+		children:    make(map[CommitId][]CommitId),
+		byAuthor:    make(map[common.Address][]CommitId),
+		cidByCommit: make(map[CommitId]store.CID),
 	}
 }
 
@@ -200,6 +203,7 @@ func (m *Memory) Commit(_ context.Context, req CommitRequest) (CommitId, error) 
 		Confidence:  req.Confidence,
 		Timestamp:   now,
 	})
+	m.cidByCommit[id] = req.CID
 
 	return id, nil
 }
@@ -263,6 +267,16 @@ func (m *Memory) SearchByTag(_ context.Context, tag [32]byte, limit int) ([]Comm
 		return []CommitId{}, nil
 	}
 	return out, nil
+}
+
+func (m *Memory) GetCID(_ context.Context, id CommitId) (store.CID, error) {
+	cid := m.cidByCommit[id]
+
+	if cid.IsZero() {
+		return cid, errors.New("cid doesn't exist")
+	}
+
+	return cid, nil
 }
 
 // Len returns the number of commits in the index. Intended for tests.
