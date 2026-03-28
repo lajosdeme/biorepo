@@ -1,6 +1,8 @@
 package types
 
 import (
+	"errors"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -34,6 +36,23 @@ func TagFromString(s string) [32]byte {
 	return crypto.Keccak256Hash([]byte(s))
 }
 
+func TagToString(tag [32]byte) (string, error) {
+	switch tag {
+	case TagDroughtResistance:
+		return StrDroughtResistance, nil
+	case TagCarbonSequestration:
+		return StrCarbonSequestration, nil
+	case TagNitrogenFixation:
+		return StrNitrogenFixation, nil
+	case TagPlasticDegradation:
+		return StrPlasticDegradation, nil
+	case TagMethaneReduction:
+		return StrMethaneReduction, nil
+	default:
+		return "", errors.New("unrecognized tag")
+	}
+}
+
 // common problem tags — agents and UI use these constants
 var (
 	TagDroughtResistance   = TagFromString("drought-resistance")
@@ -41,4 +60,13 @@ var (
 	TagNitrogenFixation    = TagFromString("nitrogen-fixation")
 	TagPlasticDegradation  = TagFromString("plastic-degradation")
 	TagMethaneReduction    = TagFromString("methane-reduction")
+)
+
+// common problem strings
+var (
+	StrDroughtResistance   = "drought-resistance"
+	StrCarbonSequestration = "carbon-sequestration"
+	StrNitrogenFixation    = "nitrogen-fixation"
+	StrPlasticDegradation  = "plastic-degradation"
+	StrMethaneReduction    = "methane-reduction"
 )
