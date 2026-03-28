@@ -261,6 +261,28 @@ func (c *Client) resolveIds(ctx context.Context, ids []index.CommitId, caller st
 	return designs, nil
 }
 
+// PutRaw uploads arbitrary bytes to Filecoin and returns the CID.
+// Used for non-sequence artifacts such as the autoresearch report JSON
+// and Markdown files. The bytes are not indexed onchain.
+func (c *Client) PutRaw(ctx context.Context, data []byte) (store.CID, error) {
+	cid, err := c.store.Put(ctx, data)
+	if err != nil {
+		return "", fmt.Errorf("putRaw: %w", err)
+	}
+	return cid, nil
+}
+
+// GetCID returns the Filecoin CID stored onchain for a CommitId.
+// This is a thin wrapper over index.GetCID, exposed so the publisher
+// can record the CID in the report without accessing the index directly.
+func (c *Client) GetCID(ctx context.Context, id index.CommitId) (store.CID, error) {
+	cid, err := c.index.GetCID(ctx, id)
+	if err != nil {
+		return "", fmt.Errorf("getCID(%s): %w", id.Hex(), err)
+	}
+	return cid, nil
+}
+
 // scaleConfidence converts a float64 in [0, 1] to a uint32 in [0, 1_000_000],
 // clamping out-of-range values rather than erroring.
 func scaleConfidence(f float64) uint32 {
