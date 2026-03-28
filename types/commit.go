@@ -12,10 +12,6 @@ type CommitId [32]byte
 
 var ZeroCommitId CommitId // all zeros — used as parent for root commits
 
-func CommitIdFromHex(s string) (CommitId, error)
-func (c CommitId) Hex() string
-func (c CommitId) IsZero() bool
-
 // BioCommit mirrors the Solidity struct exactly
 // used when reading from chain via getCommit()
 type BioCommit struct {
