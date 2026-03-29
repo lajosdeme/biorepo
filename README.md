@@ -25,7 +25,12 @@ Every design in the protocol lives in two places simultaneously:
                                           CommitId → CID string
 ```
 
-**Store** — a content-addressed blob store. Holds raw FASTA-encoded sequence bytes. The Filecoin implementation uses the [lighthouse.storage](https://lighthouse.storage) HTTP API; the memory implementation holds bytes in a `sync.RWMutex`-protected map.
+**Store** — a content-addressed blob store. Holds raw FASTA-encoded sequence bytes. Two Filecoin implementations are available:
+
+- **filecoin-pin** (recommended) — uses the [filecoin-pin](https://github.com/lajosdeme/filecoin-pin) CLI to store data via the Filecoin Pinning Service API. It is self-custodial and supports direct wallet funding.
+- **lighthouse.storage** — uses the Lighthouse HTTP API, a managed storage service.
+
+The memory implementation holds bytes in a `sync.RWMutex`-protected map.
 
 **Index** — the onchain record. Each design produces one `BioCommit` on the `BioRepository` contract, identified by a `CommitId` (`bytes32`). The contract stores the Filecoin CID in a `cidByCommit` mapping so that any `CommitId` can be resolved back to its sequence without any offchain registry. The onchain implementation wraps the `abigen`-generated bindings; the memory implementation mirrors the contract's semantics exactly, including parent existence checks and the `CommitExists` guard.
 
@@ -50,12 +55,15 @@ Requires Go 1.21 or later.
 ```go
 import (
     "github.com/lajosdeme/biorepo"
-    filecoinstore "github.com/lajosdeme/biorepo/store/filecoin"
+    "github.com/lajosdeme/biorepo/store"
     onchainindex "github.com/lajosdeme/biorepo/index/onchain"
 )
 
-// Store — Filecoin via lighthouse.storage
-s := filecoinstore.New(os.Getenv("WEB3_STORAGE_TOKEN"))
+// Store — Filecoin via filecoin-pin (recommended)
+s := store.NewFilecoinPinStore()
+
+// Or use Lighthouse storage
+// s := store.NewLighthouseStore(os.Getenv("LIGHTHOUSE_API_KEY"))
 
 // Index — deployed BioRepository contract
 ethClient, _ := ethclient.Dial(os.Getenv("ETH_RPC_URL"))
@@ -79,6 +87,35 @@ client := biorepo.New(store.NewMemory(), index.NewMemory())
 ```
 
 Both memory implementations are safe for concurrent use and mirror the semantics of their production counterparts exactly. No network, no chain, no configuration required.
+
+#### Filecoin Pin Store (recommended)
+
+The `filecoin-pin` store uses the [filecoin-pin CLI](https://github.com/lajosdeme/filecoin-pin). Prerequisites:
+
+```bash
+# Install filecoin-pin
+npm install -g filecoin-pin
+
+# Set up your wallet (must have FIL balance)
+export PRIVATE_KEY="0x..."
+filecoin-pin payments setup --auto
+```
+
+Configure via options:
+
+```go
+s := store.NewFilecoinPinStore(
+    store.WithGateway("https://ipfs.io/ipfs/"),           // default
+    store.WithCLIPath("/usr/local/bin/filecoin-pin"),     // optional
+    store.WithEnv("PRIVATE_KEY=0x..."),                   // or set env var
+)
+```
+
+#### Lighthouse Storage (alternative)
+
+```go
+s := store.NewLighthouseStore(os.Getenv("LIGHTHOUSE_API_KEY"))
+```
 
 ---
 
@@ -261,7 +298,8 @@ biorepo/
 │   └── tags.go          # TagFromString(), Season 1 tag constants
 ├── store/
 │   ├── store.go         # Store interface, CID type, memory implementation
-│   └── filecoin.go      # Filecoin/lighthouse.storage implementation
+│   ├── filecoin_pin.go  # Filecoin via filecoin-pin CLI (recommended)
+│   └── lighthouse_storage.go  # Filecoin via lighthouse.storage API
 └── index/
     ├── index.go         # Index interface, CommitRequest, memory implementation
     ├── onchain.go       # Ethereum implementation using abigen bindings
