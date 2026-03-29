@@ -10,20 +10,20 @@ import (
 	"github.com/lighthouse-web3/lighthouse-go-sdk/lighthouse"
 )
 
-type FilecoinStore struct {
+type LighthouseStore struct {
 	c *lighthouse.Client
 }
 
-func NewFilecoinStore(key string) *FilecoinStore {
+func NewLighthouseStore(key string) *LighthouseStore {
 	client := lighthouse.NewClient(nil,
 		lighthouse.WithAPIKey(key),
 	)
-	return &FilecoinStore{c: client}
+	return &LighthouseStore{c: client}
 }
 
 // Put stores data and returns its CID.
 // Uploads the data as a temporary file, then uploads to Lighthouse.
-func (s *FilecoinStore) Put(ctx context.Context, data []byte) (CID, error) {
+func (s *LighthouseStore) Put(ctx context.Context, data []byte) (CID, error) {
 	// Create a temporary file to upload
 	tmpFile, err := os.CreateTemp("", "lighthouse-upload-*")
 	if err != nil {
@@ -47,7 +47,7 @@ func (s *FilecoinStore) Put(ctx context.Context, data []byte) (CID, error) {
 }
 
 // Get retrieves the raw bytes for a given CID.
-func (s *FilecoinStore) Get(ctx context.Context, cid CID) ([]byte, error) {
+func (s *LighthouseStore) Get(ctx context.Context, cid CID) ([]byte, error) {
 	// First verify the CID exists
 	_, err := s.c.Files().Info(ctx, string(cid))
 	if err != nil {
@@ -84,7 +84,7 @@ func (s *FilecoinStore) Get(ctx context.Context, cid CID) ([]byte, error) {
 }
 
 // Exists reports whether the given CID is present in the store.
-func (s *FilecoinStore) Exists(ctx context.Context, cid CID) (bool, error) {
+func (s *LighthouseStore) Exists(ctx context.Context, cid CID) (bool, error) {
 	_, err := s.c.Files().Info(ctx, string(cid))
 	if err != nil {
 		// Check if error indicates not found
@@ -98,7 +98,7 @@ func (s *FilecoinStore) Exists(ctx context.Context, cid CID) (bool, error) {
 // List returns all CIDs currently held in the store.
 // Note: Lighthouse's List returns files with pagination. This implementation
 // collects all pages and extracts CIDs.
-func (s *FilecoinStore) List(ctx context.Context) ([]CID, error) {
+func (s *LighthouseStore) List(ctx context.Context) ([]CID, error) {
 	var allCIDs []CID
 	var lastKey *string
 
@@ -129,7 +129,7 @@ func (s *FilecoinStore) List(ctx context.Context) ([]CID, error) {
 // Delete removes the content for the given CID.
 // Note: Lighthouse uses file IDs rather than CIDs for deletion. This creates a
 // limitation - we need to find the file ID for a given CID first.
-func (s *FilecoinStore) Delete(ctx context.Context, cid CID) error {
+func (s *LighthouseStore) Delete(ctx context.Context, cid CID) error {
 	// We need to search through the list to find the file ID for this CID.
 	// This is inefficient but necessary given the API structure.
 
