@@ -1,6 +1,6 @@
-# biorepo
+# Biorepo 
 
-The `biorepo` module is the foundational data layer of the godmode.bio protocol. It is the **GitHub for synthetic biology** — a content-addressed, onchain-indexed store for AI-generated and researcher-authored DNA designs.
+The `biorepo` module is the foundational data layer of the godmode.bio protocol. It is the **GitHub for synthetic biology** — a content-addressed, onchain-indexed store for AI-generated and researcher-authored DNA designs. 🧬
 
 This module is a standalone Go library. It is imported by the `autoresearch` agent, the godmode.bio web UI, and any other tooling that needs to read from or write to the protocol. It has no opinion about how designs are generated or evaluated — that belongs to the layers above it.
 
