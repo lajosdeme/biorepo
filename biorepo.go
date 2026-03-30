@@ -236,8 +236,8 @@ func (c *Client) GetCommitsByAuthor(ctx context.Context, author common.Address) 
 // Example:
 //
 //	designs, err := client.SearchByTag(ctx, types.TagFromString("drought-resistance"), 10)
-func (c *Client) SearchByTag(ctx context.Context, tag [32]byte, limit int) ([]Design, error) {
-	ids, err := c.index.SearchByTag(ctx, tag, limit)
+func (c *Client) SearchByTag(ctx context.Context, tag [32]byte, limit int, lookbackBlocks uint64) ([]Design, error) {
+	ids, err := c.index.SearchByTag(ctx, tag, limit, lookbackBlocks)
 	if err != nil {
 		return nil, fmt.Errorf("searchByTag: %w", err)
 	}

@@ -110,7 +110,7 @@ type Index interface {
 	// values via GetCommit.
 	//
 	// A limit of 0 means no limit.
-	SearchByTag(ctx context.Context, tag [32]byte, limit int) ([]CommitId, error)
+	SearchByTag(ctx context.Context, tag [32]byte, limit int, lookbackBlocks uint64) ([]CommitId, error)
 
 	// GetCID returns the Filecoin CID stored onchain for the given CommitId.
 	// This is a view call to cidByCommit() on the contract.
@@ -250,7 +250,7 @@ func (m *Memory) GetCommitsByAuthor(_ context.Context, author common.Address) ([
 }
 
 // SearchByTag returns CommitIds whose ProblemTag or FunctionTag matches tag.
-func (m *Memory) SearchByTag(_ context.Context, tag [32]byte, limit int) ([]CommitId, error) {
+func (m *Memory) SearchByTag(_ context.Context, tag [32]byte, limit int, lookbackBlocks uint64) ([]CommitId, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
