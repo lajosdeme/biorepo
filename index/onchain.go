@@ -136,8 +136,7 @@ func (o *Onchain) GetCommitsByAuthor(ctx context.Context, author common.Address)
 // deduplicated. Both calls scan from the earliest block; callers doing
 // high-frequency searches should maintain their own event cache rather than
 // calling this in a hot path.
-func (o *Onchain) SearchByTag(ctx context.Context, tag [32]byte, limit int) ([]CommitId, error) {
-	opts := &bind.FilterOpts{Context: ctx}
+func (o *Onchain) SearchByTag(ctx context.Context, tag [32]byte, limit int, lookbackBlocks uint64) ([]CommitId, error) {
 	seen := make(map[CommitId]struct{})
 	var result []CommitId
 
@@ -156,8 +155,19 @@ func (o *Onchain) SearchByTag(ctx context.Context, tag [32]byte, limit int) ([]C
 		return iter.Error()
 	}
 
+	header, err := o.client.HeaderByNumber(context.Background(), nil)
+	if err != nil {
+		return result, err
+	}
+
+	latestBlock := header.Number.Uint64()
+	startBlock := latestBlock - lookbackBlocks
+
 	// Filter by problemTag.
-	byProblem, err := o.contract.FilterBioCommitCreated(opts, nil, [][32]byte{tag}, nil)
+	byProblem, err := o.contract.FilterBioCommitCreated(&bind.FilterOpts{
+		Start: startBlock,
+		End:   &latestBlock,
+	}, nil, [][32]byte{tag}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("onchain.SearchByTag: filtering by problemTag: %w", err)
 	}
@@ -167,7 +177,11 @@ func (o *Onchain) SearchByTag(ctx context.Context, tag [32]byte, limit int) ([]C
 
 	// Filter by functionTag — skip if limit already reached.
 	if limit == 0 || len(result) < limit {
-		byFunction, err := o.contract.FilterBioCommitCreated(opts, nil, nil, [][32]byte{tag})
+		byFunction, err := o.contract.FilterBioCommitCreated(
+			&bind.FilterOpts{
+				Start: startBlock,
+				End:   &latestBlock,
+			}, nil, nil, [][32]byte{tag})
 		if err != nil {
 			return nil, fmt.Errorf("onchain.SearchByTag: filtering by functionTag: %w", err)
 		}
